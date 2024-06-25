@@ -5,6 +5,9 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 run:
 	go run apis/services/sales/main.go | go run apis/tooling/logfmt/main.go
 
+run-help:
+	go run apis/services/sales/main.go | go run apis/tooling/logfmt/main.go
+
 
 # ==============================================================================
 # Define dependencies
