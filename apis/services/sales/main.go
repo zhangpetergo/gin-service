@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"expvar"
+	"fmt"
 	"github.com/spf13/viper"
+	"github.com/zhangpetergo/gin-service/apis/services/api/debug"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -75,7 +79,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	viper.SetDefault("Web.IdleTimeout", "120s")
 	viper.SetDefault("Web.ShutdownTimeout", "20s")
 	viper.SetDefault("Web.APIHost", "0.0.0.0:3000")
-	viper.SetDefault("Web.DebugHost", "0.0.0.0:4000")
+	viper.SetDefault("Web.DebugHost", "0.0.0.0:3010")
 	viper.SetDefault("Web.CORSAllowedOrigins", "*")
 
 	// 设置配置文件路径和名称
@@ -115,13 +119,60 @@ func run(ctx context.Context, log *logger.Logger) error {
 	// 打印配置
 	log.Info(ctx, "startup", "config", cfg)
 
+	expvar.NewString("build").Set(cfg.Version.Build)
+
 	// -------------------------------------------------------------------------
+	// Start Debug Service
+
+	go func() {
+		log.Info(ctx, "startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
+
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.Mux()); err != nil {
+			log.Error(ctx, "shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "msg", err)
+		}
+	}()
+
+	// -------------------------------------------------------------------------
+	// Start API Service
+
+	log.Info(ctx, "startup", "status", "initializing V1 API support")
+
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-shutdown
 
-	log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
-	defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
+	api := http.Server{
+		Addr:         cfg.Web.APIHost,
+		Handler:      nil,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
+	}
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Info(ctx, "startup", "status", "api v1 router started", "host", api.Addr)
+
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+	case sig := <-shutdown:
+		log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
+
+		// 设置超时控制
+		ctx, cancel := context.WithTimeout(ctx, cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+	}
 
 	return nil
 }

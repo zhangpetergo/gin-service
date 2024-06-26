@@ -3,12 +3,14 @@ module github.com/zhangpetergo/gin-service
 go 1.22.4
 
 require (
+	github.com/arl/statsviz v0.6.0
 	github.com/go-json-experiment/json v0.0.0-20240524174822-2d9f40f7385b
 	github.com/spf13/viper v1.19.0
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
