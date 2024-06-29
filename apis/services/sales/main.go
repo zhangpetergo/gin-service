@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/zhangpetergo/gin-service/apis/services/api/debug"
+	"github.com/zhangpetergo/gin-service/apis/services/sales/mux"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
 	"net/http"
 	"os"
@@ -142,7 +143,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      nil,
+		Handler:      mux.WebAPI(log, shutdown),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
