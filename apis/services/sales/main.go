@@ -8,6 +8,7 @@ import (
 	"github.com/zhangpetergo/gin-service/apis/services/api/debug"
 	"github.com/zhangpetergo/gin-service/apis/services/sales/mux"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
+	"github.com/zhangpetergo/gin-service/foundation/web"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,7 +29,7 @@ func main() {
 	}
 
 	traceIDFn := func(ctx context.Context) string {
-		return ""
+		return web.GetTraceID(ctx)
 	}
 
 	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "SALES", traceIDFn, events)
