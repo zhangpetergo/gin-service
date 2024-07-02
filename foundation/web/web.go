@@ -4,6 +4,7 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"os"
+	"syscall"
 )
 
 // App is the entrypoint into our application and what configures our context
@@ -12,6 +13,12 @@ import (
 type App struct {
 	*gin.Engine
 	shutdown chan os.Signal
+}
+
+// SignalShutdown is used to gracefully shut down the app when an integrity
+// issue is identified.
+func (a *App) SignalShutdown() {
+	a.shutdown <- syscall.SIGTERM
 }
 
 // NewApp creates an App value that handle a set of routes for the application.

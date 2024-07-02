@@ -8,4 +8,5 @@ import (
 func Routes(app *web.App) {
 	app.GET("/liveness", liveness)
 	app.GET("/readiness", readiness)
+	app.GET("/testerror", testError)
 }

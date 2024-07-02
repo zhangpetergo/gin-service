@@ -12,7 +12,7 @@ import (
 
 // WebAPI constructs a http.Handler with all application routes bound.
 func WebAPI(log *logger.Logger, shutdown chan os.Signal) *web.App {
-	mux := web.NewApp(shutdown, mid.Trace(), mid.Logger(log))
+	mux := web.NewApp(shutdown, mid.Trace(), mid.Logger(log), mid.Errors(log))
 
 	// Add the routes for the check group.
 	checkapi.Routes(mux)
