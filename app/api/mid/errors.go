@@ -46,7 +46,7 @@ func Errors(log *logger.Logger) gin.HandlerFunc {
 			// 记录错误
 			log.Error(ctx, "message", "ERROR", err.Error())
 			// 清空 c.Errors
-			c.Errors = []*gin.Error{}
+			// c.Errors = []*gin.Error{}
 
 			// 返回的是我们自定义的错误
 			if errs.IsError(err) {
