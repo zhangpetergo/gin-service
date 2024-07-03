@@ -39,6 +39,20 @@ func testError(c *gin.Context) {
 		Status: "OK",
 	}
 
-	c.JSON(200, status)
+	c.JSON(http.StatusOK, status)
 
+}
+
+func testPanic(c *gin.Context) {
+	if n := rand.Intn(100); n%2 == 0 {
+		panic("WE ARE PANICKING!!!")
+	}
+
+	status := struct {
+		Status string
+	}{
+		Status: "OK",
+	}
+
+	c.JSON(http.StatusOK, status)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
+	"github.com/zhangpetergo/gin-service/foundation/web"
 	"net/http"
 )
 
@@ -44,6 +45,9 @@ func Errors(log *logger.Logger) gin.HandlerFunc {
 			err := c.Errors[0].Err
 			// 记录错误
 			log.Error(ctx, "message", "ERROR", err.Error())
+			// 清空 c.Errors
+			c.Errors = []*gin.Error{}
+
 			// 返回的是我们自定义的错误
 			if errs.IsError(err) {
 				var e errs.Error
@@ -55,6 +59,11 @@ func Errors(log *logger.Logger) gin.HandlerFunc {
 			// 返回的不是我们自定义的错误，返回未知错误
 			e := errs.Newf(errs.Unknown, errs.Unknown.String())
 			c.JSON(codeStatus[e.Code.Value()], e)
+
+			// 如果是关闭服务的错误，直接返回
+			if web.IsShutdown(err) {
+				c.Error(err)
+			}
 		}
 
 	}
