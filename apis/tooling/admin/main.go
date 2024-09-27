@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	_ "embed"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/open-policy-agent/opa/rego"
 	"os"
 	"time"
 )
@@ -16,6 +21,9 @@ func main() {
 		fmt.Println(err)
 	}
 }
+
+//go:embed rego/authentication.rego
+var opaAuthentication string
 
 func GenToken() error {
 
@@ -78,10 +86,54 @@ func GenToken() error {
 		Type:  "PUBLIC KEY",
 		Bytes: asn1Bytes,
 	}
+
+	var b bytes.Buffer
+
 	// Write the public key to the public key file.
-	if err := pem.Encode(os.Stdout, &publicBlock); err != nil {
+	if err := pem.Encode(&b, &publicBlock); err != nil {
 		return fmt.Errorf("encoding to public file: %w", err)
 	}
+
+	// -------------------------------------------------------------------------
+	// 使用 rego 验证 token
+
+	ctx := context.Background()
+	query := fmt.Sprintf("x = data.%s.%s", "ardan.rego", "auth")
+
+	fmt.Println("query:", query)
+
+	q, err := rego.New(
+		rego.Query(query),
+		rego.Module("policy.rego", opaAuthentication),
+	).PrepareForEval(ctx)
+	if err != nil {
+		return err
+	}
+
+	input := map[string]any{
+		"Key":   b.String(),
+		"Token": str,
+		"ISS":   "service project",
+	}
+
+	results, err := q.Eval(ctx, rego.EvalInput(input))
+	if err != nil {
+		return fmt.Errorf("query: %w", err)
+	}
+
+	if len(results) == 0 {
+		return errors.New("no results")
+	}
+
+	fmt.Println("results:", results)
+
+	result, ok := results[0].Bindings["x"].(bool)
+	if !ok || !result {
+		return fmt.Errorf("bindings results[%v] ok[%v]", results, ok)
+	}
+
+	fmt.Println("\nTOKEN VALIDATED!")
+
 	return nil
 
 }
