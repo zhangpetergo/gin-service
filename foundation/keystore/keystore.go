@@ -57,6 +57,7 @@ func (ks *KeyStore) PublicKey(kid string) (string, error) {
 // Example: ks.LoadRSAKeys(os.DirFS("/zarf/keys/"))
 // Example: /zarf/keys/54bb2165-71e1-41a6-af3e-7da4a0e1e2c1.pem
 func (ks *KeyStore) LoadRSAKeys(fsys fs.FS) error {
+
 	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("walkdir failure: %w", err)

@@ -135,7 +135,6 @@ func (a *Auth) Authorize(ctx context.Context, claims Claims, userID uuid.UUID, r
 		"Subject": claims.Subject,
 		"UserID":  userID,
 	}
-	fmt.Printf("input: %v", input)
 	if err := a.opaPolicyEvaluation(ctx, regoAuthorization, rule, input); err != nil {
 		return fmt.Errorf("rego evaluation failed : %w", err)
 	}

@@ -2,6 +2,7 @@
 package checkapi
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
 	"math/rand"
@@ -9,6 +10,7 @@ import (
 )
 
 func liveness(c *gin.Context) {
+	fmt.Println("程序执行")
 	status := struct {
 		Status string
 	}{
