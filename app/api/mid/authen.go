@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/zhangpetergo/gin-service/app/api/authclient"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
 	"github.com/zhangpetergo/gin-service/business/api/auth"
+	"github.com/zhangpetergo/gin-service/foundation/logger"
 	"strings"
 	"time"
 
@@ -15,9 +17,41 @@ import (
 	"github.com/google/uuid"
 )
 
-// Authorization validates a JWT from the `Authorization` header.
-// Authorization 通过 “Authorization” 标头验证 JWT。
-func Authorization(auth *auth.Auth) gin.HandlerFunc {
+// AuthenticateService 通过 auth 服务验证身份验证
+func AuthenticateService(log *logger.Logger, client *authclient.Client) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+
+		if len(c.Errors) > 0 {
+			// 如果前面的中间件发生错误，还需要身份验证吗，当然不
+			// 直接跳过当前中间件，下一个到 处理错误中间件
+			return
+		}
+
+		ctx := c.Request.Context()
+
+		authorization := c.Request.Header.Get("Authorization")
+
+		resp, err := client.Authenticate(ctx, authorization)
+		if err != nil {
+			c.Error(errs.New(errs.Unauthenticated, err))
+			return
+		}
+
+		ctx = setUserID(ctx, resp.UserID)
+		ctx = setClaims(ctx, resp.Claims)
+
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
+	}
+
+}
+
+// AuthenticateLocal validates a JWT from the `Authorization` header.
+// AuthenticateLocal 通过 “Authorization” 标头验证 JWT。
+// AuthenticateLocal 本地处理验证
+func AuthenticateLocal(auth *auth.Auth) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		ctx := c.Request.Context()
@@ -40,6 +74,7 @@ func Authorization(auth *auth.Auth) gin.HandlerFunc {
 
 		if err != nil {
 			c.Error(err)
+			return
 		}
 
 		c.Request = c.Request.WithContext(ctx)

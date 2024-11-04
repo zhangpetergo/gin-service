@@ -1,6 +1,7 @@
 package checkapi
 
 import (
+	"github.com/zhangpetergo/gin-service/app/api/authclient"
 	"github.com/zhangpetergo/gin-service/app/api/mid"
 	"github.com/zhangpetergo/gin-service/business/api/auth"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
@@ -8,15 +9,17 @@ import (
 )
 
 // Routes adds specific routes for this group.
-func Routes(app *web.App, log *logger.Logger, a *auth.Auth) {
+func Routes(app *web.App, log *logger.Logger, authClient *authclient.Client) {
 
-	authen := mid.Authorization(a)
-	athAdminOnly := mid.Authorize(a, auth.RuleAdminOnly)
+	authen := mid.AuthenticateService(log, authClient)
+	athAdminOnly := mid.AuthorizeService(log, authClient, auth.RuleAdminOnly)
 
-	// 添加组的路
+	// 不需要中间件的组
 	checkGroup := app.Group("")
 	checkGroup.GET("/liveness", liveness)
 	checkGroup.GET("/readiness", readiness)
+
+	// 测试中间件的组
 	testGroup := app.Group("")
 	testGroup.Use(mid.Trace(), mid.Logger(log), mid.Metrics(), mid.Errors(log), mid.Panics())
 	testGroup.GET("/testerror", testError)
