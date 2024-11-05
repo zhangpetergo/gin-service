@@ -3,6 +3,7 @@ module github.com/zhangpetergo/gin-service
 go 1.22.4
 
 require (
+	github.com/ardanlabs/darwin/v3 v3.3.1
 	github.com/arl/statsviz v0.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-json-experiment/json v0.0.0-20240524174822-2d9f40f7385b
