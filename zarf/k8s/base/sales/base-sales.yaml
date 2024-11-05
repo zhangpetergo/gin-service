@@ -23,6 +23,11 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
 
+      initContainers:
+        - name: init-migrate-seed
+          image: sales-image
+          command: ['./admin']
+
       containers:
         - name: sales
           image: sales-image
@@ -58,12 +63,15 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
+
             - name: GOGC
               value: "off"
+
             - name: GOMEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
+
             - name: SALES_DB_USER # here as an example for configuring a hosted db.
               valueFrom:
                 configMapKeyRef:
@@ -88,6 +96,7 @@ spec:
                   name: app-config
                   key: db_disabletls
                   optional: true
+
             - name: KUBERNETES_NAMESPACE
               valueFrom:
                 fieldRef:
