@@ -1,6 +1,7 @@
 package checkapi
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/zhangpetergo/gin-service/app/api/authclient"
 	"github.com/zhangpetergo/gin-service/app/api/mid"
 	"github.com/zhangpetergo/gin-service/business/api/auth"
@@ -9,24 +10,26 @@ import (
 )
 
 // Routes adds specific routes for this group.
-func Routes(app *web.App, log *logger.Logger, authClient *authclient.Client) {
+func Routes(build string, app *web.App, log *logger.Logger, db *sqlx.DB, authClient *authclient.Client) {
 
 	authen := mid.AuthenticateService(log, authClient)
 	athAdminOnly := mid.AuthorizeService(log, authClient, auth.RuleAdminOnly)
 
+	api := newAPI(build, log, db)
+
 	// 不需要中间件的组
 	checkGroup := app.Group("")
-	checkGroup.GET("/liveness", liveness)
-	checkGroup.GET("/readiness", readiness)
+	checkGroup.GET("/liveness", api.liveness)
+	checkGroup.GET("/readiness", api.readiness)
 
 	// 测试中间件的组
 	testGroup := app.Group("")
 	testGroup.Use(mid.Trace(), mid.Logger(log), mid.Metrics(), mid.Errors(log), mid.Panics())
-	testGroup.GET("/testerror", testError)
-	testGroup.GET("/testpanic", testPanic)
+	testGroup.GET("/testerror", api.testError)
+	testGroup.GET("/testpanic", api.testPanic)
 
 	// 测试权限组
 	authGroup := app.Group("")
 	authGroup.Use(mid.Trace(), mid.Logger(log), authen, athAdminOnly, mid.Metrics(), mid.Errors(log), mid.Panics())
-	authGroup.GET("/testauth", liveness)
+	authGroup.GET("/testauth", api.liveness)
 }

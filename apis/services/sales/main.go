@@ -8,6 +8,7 @@ import (
 	"github.com/zhangpetergo/gin-service/apis/services/api/debug"
 	"github.com/zhangpetergo/gin-service/apis/services/sales/mux"
 	"github.com/zhangpetergo/gin-service/app/api/authclient"
+	"github.com/zhangpetergo/gin-service/business/data/sqldb"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
 	"github.com/zhangpetergo/gin-service/foundation/web"
 	"net/http"
@@ -75,6 +76,16 @@ func run(ctx context.Context, log *logger.Logger) error {
 			//Issuer     string `conf:"default:service project"`
 			Host string
 		}
+
+		DB struct {
+			User         string
+			Password     string
+			HostPort     string
+			Name         string
+			MaxIdleConns int
+			MaxOpenConns int
+			DisableTLS   bool
+		}
 	}{
 		Version: struct {
 			Build string
@@ -97,6 +108,15 @@ func run(ctx context.Context, log *logger.Logger) error {
 	//viper.SetDefault("Auth.Issuer", "default:service project")
 	//viper.SetDefault("Auth.Host", "http://auth-service.sales-system.svc.cluster.local:6000")
 	viper.SetDefault("Auth.Host", "http://localhost:6000")
+
+	// DB
+	viper.SetDefault("DB.User", "postgres")
+	viper.SetDefault("DB.Password", "postgres")
+	viper.SetDefault("DB.HostPort", "database-service.sales-system.svc.cluster.local")
+	viper.SetDefault("DB.Name", "postgres")
+	viper.SetDefault("DB.MaxIdleConns", "2")
+	viper.SetDefault("DB.MaxOpenConns", "0")
+	viper.SetDefault("DB.DisableTLS", true)
 
 	// 设置配置文件路径和名称
 	configPath := "./zarf/config"
@@ -138,28 +158,26 @@ func run(ctx context.Context, log *logger.Logger) error {
 	expvar.NewString("build").Set(cfg.Version.Build)
 
 	// -------------------------------------------------------------------------
+	// Database Support
+	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.HostPort)
+	db, err := sqldb.Open(sqldb.Config{
+		User:         cfg.DB.User,
+		Password:     cfg.DB.Password,
+		HostPort:     cfg.DB.HostPort,
+		Name:         cfg.DB.Name,
+		MaxIdleConns: cfg.DB.MaxIdleConns,
+		MaxOpenConns: cfg.DB.MaxOpenConns,
+		DisableTLS:   cfg.DB.DisableTLS,
+	})
+	if err != nil {
+		return fmt.Errorf("connecting to db: %w", err)
+	}
+	defer db.Close()
+
+	// -------------------------------------------------------------------------
 	// Initialize authentication support
 
 	log.Info(ctx, "startup", "status", "initializing authentication support")
-
-	// Load the private keys files from disk. We can assume some system like
-	// Vault has created these files already. How that happens is not our
-	// concern.
-
-	//ks := keystore.New()
-	//if err := ks.LoadRSAKeys(os.DirFS(cfg.Auth.KeysFolder)); err != nil {
-	//	return fmt.Errorf("reading keys: %w", err)
-	//}
-	//
-	//authCfg := auth.Config{
-	//	Log:       log,
-	//	KeyLookup: ks,
-	//}
-	//
-	//auth, err := auth.New(authCfg)
-	//if err != nil {
-	//	return fmt.Errorf("constructing auth: %w", err)
-	//}
 
 	logFunc := func(ctx context.Context, msg string, v ...any) {
 		log.Info(ctx, msg, v...)
@@ -187,7 +205,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      mux.WebAPI(log, authClient, shutdown),
+		Handler:      mux.WebAPI(build, log, db, authClient, shutdown),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
