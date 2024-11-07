@@ -3,17 +3,17 @@ package mid
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/zhangpetergo/gin-service/app/api/auth"
 	"github.com/zhangpetergo/gin-service/app/api/authclient"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
-	"github.com/zhangpetergo/gin-service/business/api/auth"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
 )
 
 // ErrInvalidID represents a condition where the id is not a uuid.
 var ErrInvalidID = errors.New("ID is not in its proper form")
 
-// AuthorizeService executes the specified role and does not extract any domain data.
-func AuthorizeService(log *logger.Logger, client *authclient.Client, rule string) gin.HandlerFunc {
+// Authorize executes the specified role and does not extract any domain data.
+func Authorize(log *logger.Logger, client *authclient.Client, rule string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 

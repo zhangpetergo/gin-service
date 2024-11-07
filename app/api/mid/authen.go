@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/zhangpetergo/gin-service/app/api/auth"
 	"github.com/zhangpetergo/gin-service/app/api/authclient"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
-	"github.com/zhangpetergo/gin-service/business/api/auth"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
 	"strings"
 	"time"
@@ -17,8 +17,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// AuthenticateService 通过 auth 服务验证身份验证
-func AuthenticateService(log *logger.Logger, client *authclient.Client) gin.HandlerFunc {
+// Authenticate 通过 auth 服务验证身份验证
+func Authenticate(log *logger.Logger, client *authclient.Client) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
@@ -79,6 +79,61 @@ func AuthenticateLocal(auth *auth.Auth) gin.HandlerFunc {
 
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
+	}
+}
+
+// Bearer processes JWT authentication logic.
+func Bearer(ath *auth.Auth) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		authorization := c.Request.Header.Get("Authorization")
+
+		claims, err := ath.Authenticate(ctx, authorization)
+		if err != nil {
+			c.Error(errs.New(errs.Unauthenticated, err))
+			return
+		}
+
+		if claims.Subject == "" {
+			c.Error(errs.Newf(errs.Unauthenticated, "authorize: you are not authorized for that action, no claims"))
+			return
+		}
+
+		subjectID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			c.Error(errs.New(errs.Unauthenticated, fmt.Errorf("parsing subject: %w", err)))
+			return
+		}
+
+		ctx = setUserID(ctx, subjectID)
+		ctx = setClaims(ctx, claims)
+	}
+}
+
+// Basic processes basic authentication logic.
+func Basic() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		claims := auth.Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject:   "38dc9d84-018b-4a15-b958-0b78af11c301",
+				Issuer:    "service project",
+				ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(8760 * time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			},
+			Roles: []string{"ADMIN"},
+		}
+
+		subjectID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			c.Error(errs.Newf(errs.Unauthenticated, "parsing subject: %s", err))
+			return
+		}
+
+		ctx = setUserID(ctx, subjectID)
+		ctx = setClaims(ctx, claims)
 	}
 }
 
