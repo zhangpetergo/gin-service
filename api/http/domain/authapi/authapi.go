@@ -2,6 +2,7 @@
 package authapi
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/zhangpetergo/gin-service/app/api/auth"
 	"github.com/zhangpetergo/gin-service/app/api/errs"
@@ -57,6 +58,7 @@ func (api *api) authenticate(c *gin.Context) {
 	userID, err := mid.GetUserID(ctx)
 	if err != nil {
 		c.Error(errs.New(errs.Unauthenticated, err))
+		fmt.Println("fuck2!!!!!!!!")
 		return
 	}
 

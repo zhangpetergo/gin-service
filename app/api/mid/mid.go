@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"github.com/zhangpetergo/gin-service/app/api/auth"
+	"github.com/zhangpetergo/gin-service/business/domain/userbus"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +18,7 @@ type ctxKey int
 const (
 	claimKey ctxKey = iota + 1
 	userIDKey
+	userKey
 )
 
 func setClaims(ctx context.Context, claims auth.Claims) context.Context {
@@ -43,5 +45,18 @@ func GetUserID(ctx context.Context) (uuid.UUID, error) {
 		return uuid.UUID{}, errors.New("user id not found in context")
 	}
 
+	return v, nil
+}
+
+func setUser(ctx context.Context, usr userbus.User) context.Context {
+	return context.WithValue(ctx, userKey, usr)
+}
+
+// GetUser returns the user from the context.
+func GetUser(ctx context.Context) (userbus.User, error) {
+	v, ok := ctx.Value(userKey).(userbus.User)
+	if !ok {
+		return userbus.User{}, errors.New("user not found in context")
+	}
 	return v, nil
 }

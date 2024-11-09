@@ -19,7 +19,8 @@ func Routes(app *web.App, cfg Config) {
 	basic := mid.Basic()
 	api := newAPI(cfg.Auth)
 
-	app.GET("/auth/token/:kid", api.token, mid.Trace(), mid.Logger(cfg.Log), basic, mid.Metrics(), mid.Errors(cfg.Log), mid.Panics())
-	app.GET("/auth/authenticate", api.authenticate, mid.Trace(), mid.Logger(cfg.Log), bearer, mid.Metrics(), mid.Errors(cfg.Log), mid.Panics())
-	app.POST("/auth/authorize", api.authorize, mid.Trace(), mid.Logger(cfg.Log), mid.Metrics(), mid.Errors(cfg.Log), mid.Panics())
+	// 额，应该把中间件放在前面，处理程序放在最后
+	app.GET("/auth/token/:kid", mid.Trace(), mid.Logger(cfg.Log), basic, mid.Metrics(), mid.Errors(cfg.Log), mid.Panics(), api.token)
+	app.GET("/auth/authenticate", mid.Trace(), mid.Logger(cfg.Log), bearer, mid.Metrics(), mid.Errors(cfg.Log), mid.Panics(), api.authenticate)
+	app.POST("/auth/authorize", mid.Trace(), mid.Logger(cfg.Log), mid.Metrics(), mid.Errors(cfg.Log), mid.Panics(), api.authorize)
 }

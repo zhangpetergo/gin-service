@@ -102,3 +102,12 @@ func Errors(log *logger.Logger) gin.HandlerFunc {
 
 	}
 }
+
+func CheckError() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if len(c.Errors) > 0 {
+			c.Abort()
+		}
+		c.Next()
+	}
+}

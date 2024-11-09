@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/zhangpetergo/gin-service/business/api/auth"
+	"github.com/zhangpetergo/gin-service/app/api/auth"
 	"time"
 
 	"github.com/zhangpetergo/gin-service/foundation/logger"

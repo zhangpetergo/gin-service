@@ -29,6 +29,7 @@ func Authenticate(log *logger.Logger, client *authclient.Client) gin.HandlerFunc
 		}
 
 		ctx := c.Request.Context()
+		log.Info(ctx, "-----------------Authenticate------------------------")
 
 		authorization := c.Request.Header.Get("Authorization")
 
@@ -40,7 +41,6 @@ func Authenticate(log *logger.Logger, client *authclient.Client) gin.HandlerFunc
 
 		ctx = setUserID(ctx, resp.UserID)
 		ctx = setClaims(ctx, resp.Claims)
-
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
@@ -108,6 +108,9 @@ func Bearer(ath *auth.Auth) gin.HandlerFunc {
 
 		ctx = setUserID(ctx, subjectID)
 		ctx = setClaims(ctx, claims)
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
 	}
 }
 
@@ -134,6 +137,9 @@ func Basic() gin.HandlerFunc {
 
 		ctx = setUserID(ctx, subjectID)
 		ctx = setClaims(ctx, claims)
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
 	}
 }
 

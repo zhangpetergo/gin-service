@@ -6,7 +6,6 @@ import (
 	"context"
 	"github.com/zhangpetergo/gin-service/app/api/auth"
 	"github.com/zhangpetergo/gin-service/app/api/authclient"
-	"github.com/zhangpetergo/gin-service/app/api/mid"
 	"github.com/zhangpetergo/gin-service/foundation/logger"
 	"github.com/zhangpetergo/gin-service/foundation/web"
 
@@ -36,10 +35,6 @@ func WebAPI(cfg Config, routeAdder RouteAdder) *web.App {
 
 	app := web.NewApp(
 		logger,
-		mid.Logger(cfg.Log),
-		mid.Errors(cfg.Log),
-		mid.Metrics(),
-		mid.Panics(),
 	)
 
 	routeAdder.Add(app, cfg)
