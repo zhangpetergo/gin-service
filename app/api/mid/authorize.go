@@ -25,6 +25,8 @@ func Authorize(log *logger.Logger, client *authclient.Client, rule string) gin.H
 
 		ctx := c.Request.Context()
 
+		// 在使用日志调试的过程中，发现需要一条全局的日志 logger 还是很有必要的
+		// 是不是可以更改 logger 的操作
 		log.Info(ctx, "-----------------Authorize------------------------")
 
 		userID, err := GetUserID(ctx)
